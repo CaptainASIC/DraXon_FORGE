@@ -1,3 +1,5 @@
 discord.py>=2.3.2
 python-dotenv>=1.0.0
 asyncpg>=0.28.0  # PostgreSQL database adapter
+redis>=5.0.1     # Redis support with async capabilities
+certifi>=2023.7.22  # SSL certificate verification

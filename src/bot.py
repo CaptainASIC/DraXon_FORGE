@@ -1,14 +1,21 @@
 import discord
 from discord.ext import commands
 import os
+import logging
+import asyncpg
+import redis.asyncio as redis
 from dotenv import load_dotenv
 from utils.constants import *
-from utils.database import Database
+from db.database import Database, init_db, init_redis
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('DraXon_FORGE')
 
 # Load environment variables from env directory
 load_dotenv('../env/.env')
 
-class DraXonMechanic(commands.Bot):
+class DraXonFORGE(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
@@ -20,67 +27,86 @@ class DraXonMechanic(commands.Bot):
             application_id=os.getenv('APPLICATION_ID')
         )
         
-        self.db = Database()
+        self.db_pool = None
+        self.redis_pool = None
+        self.db = None
 
     async def setup_hook(self):
         """Setup hook for loading cogs and syncing commands"""
         try:
-            # Connect to database and initialize
-            print("Connecting to database...")
-            await self.db.connect()
-            print("Database connection established")
+            # Initialize database and Redis connections
+            logger.info("Connecting to database and Redis...")
+            
+            # Build database URL
+            db_url = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@" \
+                     f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/" \
+                     f"{os.getenv('DB_NAME')}"
+            
+            # Build Redis URL
+            redis_url = f"redis://{os.getenv('REDIS_HOST', 'localhost')}:" \
+                       f"{os.getenv('REDIS_PORT', '6379')}/" \
+                       f"{os.getenv('REDIS_DB', '0')}"
+            
+            # Initialize connections
+            self.db_pool = await init_db(db_url)
+            self.redis_pool = await init_redis(redis_url)
+            
+            # Create database interface
+            self.db = Database(self.db_pool, self.redis_pool)
+            logger.info("Database and Redis connections established")
             
             # Load all cogs
-            print("Loading cogs...")
+            logger.info("Loading cogs...")
             await self.load_extension('cogs.system')
-            print("System cog loaded")
+            logger.info("System cog loaded")
             
             # Sync commands with Discord
-            print("Syncing commands...")
+            logger.info("Syncing commands...")
             synced = await self.tree.sync()
-            print(f"Synced {len(synced)} command(s)")
+            logger.info(f"Synced {len(synced)} command(s)")
             
         except Exception as e:
-            print(f"Error during setup: {str(e)}")
-            raise  # Re-raise to ensure Railway restarts the bot
+            logger.error(f"Error during setup: {str(e)}")
+            raise
 
     async def close(self):
         """Cleanup when bot is shutting down"""
-        await self.db.close()
+        logger.info("Bot shutting down...")
+        if self.db:
+            await self.db.close()
         await super().close()
 
     async def on_ready(self):
         """Event handler for when the bot is ready"""
-        print(f'{self.user} has connected to Discord!')
-        print(f'Bot Version: {APP_VERSION}')
-        print(f'Build Date: {BUILD_DATE}')
+        logger.info(f'{self.user} has connected to Discord!')
+        logger.info(f'Bot Version: {APP_VERSION}')
+        logger.info(f'Build Date: {BUILD_DATE}')
         
         # Print guilds the bot is in
         guilds = [guild.name for guild in self.guilds]
-        print(f"Bot is in {len(guilds)} guild(s): {', '.join(guilds)}")
+        logger.info(f"Bot is in {len(guilds)} guild(s): {', '.join(guilds)}")
         
-        await self.change_presence(activity=discord.Activity(
-            type=getattr(discord.ActivityType, BOT_ACTIVITY_TYPE),
-            name=BOT_ACTIVITY_NAME
-        ))
+        # Set custom activity
+        activity = discord.CustomActivity(name="Fleet Operations & Resource Guidance Engine")
+        await self.change_presence(activity=activity)
 
 def main():
     """Main function to run the bot"""
     token = os.getenv('DISCORD_TOKEN')
     if not token:
-        print(MSG_ERROR_TOKEN)
+        logger.error(MSG_ERROR_TOKEN)
         return
     
     app_id = os.getenv('APPLICATION_ID')
     if not app_id:
-        print("Error: APPLICATION_ID environment variable not set")
+        logger.error("Error: APPLICATION_ID environment variable not set")
         return
     
     debug = os.getenv('DEBUG', 'false').lower() == 'true'
     if debug:
-        print("Debug mode enabled")
+        logger.info("Debug mode enabled")
     
-    bot = DraXonMechanic()
+    bot = DraXonFORGE()
     bot.run(token)
 
 if __name__ == "__main__":

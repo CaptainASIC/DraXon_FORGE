@@ -121,12 +121,12 @@ class PeripheralsModal(discord.ui.Modal, title="Input Devices"):
         
         embed = discord.Embed(
             title=f"{ICON_SUCCESS} Input Devices Saved",
-            description="Your input device information has been saved. Use `/system show` to display all your system information.",
+            description="Your input device information has been saved. Use `/forge-show` to display all your system information.",
             color=COLOR_SUCCESS
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-class SystemCog(commands.GroupCog, name="system"):
+class ForgeCog(commands.GroupCog, name="forge"):
     """Cog for system-related commands"""
     
     def __init__(self, bot):
@@ -150,23 +150,34 @@ class SystemCog(commands.GroupCog, name="system"):
         await interaction.response.send_modal(modal)
 
     @app_commands.command(name="show", description=CMD_SHOW_DESC)
-    async def show(self, interaction: discord.Interaction):
+    @app_commands.describe(member="The member whose system information you want to view (optional)")
+    async def show(self, interaction: discord.Interaction, member: discord.Member = None):
         """Display collected system specifications"""
-        info = await self.bot.db.get_system_info(interaction.user.id)
+        # If no member specified, show own info
+        target_user = member or interaction.user
+        target_name = f"{target_user.display_name}'s" if member else "Your"
+        
+        info = await self.bot.db.get_system_info(target_user.id)
         
         if not info:
             embed = discord.Embed(
                 title=f"{ICON_ERROR} No System Information Available",
-                description=MSG_NO_INFO,
+                description=MSG_NO_MEMBER_INFO if member else MSG_NO_INFO,
                 color=COLOR_ERROR
             )
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         embed = discord.Embed(
-            title=f"{ICON_SYSTEM} System Specifications",
+            title=f"{ICON_SYSTEM} {target_name} System Specifications",
             description=f"Last Updated: {info['updated_at'].strftime('%Y-%m-%d %H:%M:%S')}",
             color=COLOR_INFO
+        )
+
+        # Set the author to the target user
+        embed.set_author(
+            name=target_user.display_name,
+            icon_url=target_user.display_avatar.url
         )
 
         # Core system specs
@@ -184,8 +195,19 @@ class SystemCog(commands.GroupCog, name="system"):
         if 'other_controllers' in info and info['other_controllers']:
             embed.add_field(name="Other Controllers", value=info['other_controllers'], inline=False)
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="about", description=CMD_ABOUT_DESC)
+    async def about(self, interaction: discord.Interaction):
+        """Display information about how to use the bot"""
+        embed = discord.Embed(
+            title=f"{ICON_INFO} About DraXon FORGE",
+            description=MSG_ABOUT,
+            color=COLOR_INFO
+        )
+        embed.set_footer(text=f"Version {APP_VERSION} • Built {BUILD_DATE}")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 async def setup(bot):
-    """Setup function for the system cog"""
-    await bot.add_cog(SystemCog(bot))
+    """Setup function for the forge cog"""
+    await bot.add_cog(ForgeCog(bot))
