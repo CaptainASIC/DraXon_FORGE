@@ -1,113 +1,43 @@
-# DraXon FORGE
+# FORGE Bot (Fleet Operations & Resource Guidance Engine)
 
-A Discord bot for collecting and displaying system specifications.
+FORGE is a Discord bot designed for collecting and managing system specifications. It provides a reliable system for users to share and view system information through Discord.
 
 ## Features
 
-- `/forge-collect`: Opens a modal to input system specifications
-- `/forge-show [member]`: Displays system information (yours or another member's)
-- `/forge-about`: Learn how to use the bot
-- Redis caching for improved performance
-- PostgreSQL database for persistent storage
+- System specification collection
+- Input device tracking
+- Redis-based caching system
+- PostgreSQL database for persistence
+- Comprehensive logging system
 
-## Setup
+## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/CaptainASIC/DraXon_FORGE.git
+git clone https://github.com/CaptainASIC/DraXon_FORGE
 cd DraXon_FORGE
 ```
 
-2. Install the required dependencies:
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set up your Discord bot:
-   - Go to the [Discord Developer Portal](https://discord.com/developers/applications)
-   - Create a new application
-   - Go to the "Bot" section and create a bot
-   - Copy the bot token and application ID
-
-4. Configure environment variables:
-   - Copy `.env.example` to `.env` in the env directory
-   ```bash
-   cp env/.env.example env/.env
-   ```
-   - Edit `.env` and set your configuration:
-     * Discord bot token
-     * Application ID
-     * Database credentials
-     * Redis configuration
-   ```bash
-   nano env/.env
-   ```
-
-## Database Setup
-
-The bot requires both PostgreSQL and Redis. Here's how to set them up:
-
-### PostgreSQL Setup
-
-1. Install PostgreSQL:
-   - Ubuntu/Debian: `sudo apt install postgresql`
-   - Arch Linux: `sudo pacman -S postgresql`
-   - macOS: `brew install postgresql`
-   - Windows: Download from [PostgreSQL website](https://www.postgresql.org/download/windows/)
-
-2. Create a database user:
-```sql
-CREATE USER your_db_user WITH PASSWORD 'your_db_password';
+4. Set up environment variables:
+```bash
+cp env/.env.example env/.env
 ```
 
-3. Create the database:
-```sql
-CREATE DATABASE your_db_name OWNER your_db_user;
+5. Edit `env/.env` with your configuration:
 ```
-
-### Redis Setup
-
-1. Install Redis:
-   - Ubuntu/Debian: `sudo apt install redis-server`
-   - Arch Linux: `sudo pacman -S redis`
-   - macOS: `brew install redis`
-   - Windows: Download from [Redis website](https://redis.io/download)
-
-2. Configure Redis authentication:
-   ```bash
-   # Open redis.conf
-   sudo nano /etc/redis/redis.conf
-   ```
-   Add or modify these lines:
-   ```
-   requirepass your_redis_password
-   ```
-   For ACL-based auth (optional):
-   ```
-   user default on >your_redis_password ~* &* +@all
-   ```
-
-3. Start Redis service:
-   - Linux: `sudo systemctl restart redis`
-   - macOS: `brew services restart redis`
-   - Windows: Restart Redis server from installation
-
-4. Test Redis connection:
-   ```bash
-   redis-cli
-   auth your_redis_password
-   ping
-   ```
-   Should return "PONG"
-
-### Environment Configuration
-
-Update env/.env with your service credentials:
-
-```env
-# Discord Configuration
-DISCORD_TOKEN=your_discord_token
-APPLICATION_ID=your_application_id
+DISCORD_TOKEN=your_bot_token_here
+APPLICATION_ID=your_application_id_here
 
 # PostgreSQL Configuration
 DB_USER=your_db_user
@@ -120,58 +50,50 @@ DB_PORT=5432
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_DB=0
-REDIS_USER=default  # Optional: Remove if not using ACL
 REDIS_PASSWORD=your_redis_password
-```
-
-4. Initialize the database:
-```bash
-python src/utils/init_db.py
-```
-
-5. Run the bot:
-```bash
-cd src
-python bot.py
 ```
 
 ## Project Structure
 
 ```
 DraXon_FORGE/
+├── env/                # Environment variables
 ├── src/
-│   ├── cogs/
-│   │   └── system.py    # Command implementations
-│   ├── db/
-│   │   └── database.py  # Database and Redis interface
-│   ├── utils/
-│   │   ├── constants.py # Constants and configuration
-│   │   └── init_db.py   # Database initialization
-│   └── bot.py          # Main bot implementation
-├── env/
-│   ├── .env           # Your configuration
-│   └── .env.example   # Example configuration
-├── requirements.txt   # Project dependencies
-└── README.md         # This file
+│   ├── cogs/          # Bot command modules
+│   │   └── system.py  # System commands
+│   ├── db/            # Database modules
+│   │   └── database.py # Database interface
+│   ├── utils/         # Utility modules
+│   │   ├── constants.py # Configuration constants
+│   │   └── init_db.py  # Database initialization
+│   └── bot.py         # Main bot file
+└── README.md          # Documentation
 ```
 
 ## Commands
 
-All commands provide private responses visible only to the user who executed them.
+- `/forge-collect` - Opens a form to input system specifications
+- `/forge-show` - Displays your saved system information
+- `/forge-show <member>` - View another member's system information
+- `/forge-about` - Shows information about using the bot
 
-- `/forge-collect`: Opens a form to input your system specifications
-- `/forge-show`: Displays your saved system information
-- `/forge-show <member>`: View another member's system information
-- `/forge-about`: Shows information about how to use the bot
+## Database
 
-## License
+The bot uses PostgreSQL for persistent storage and Redis for caching:
+- System specifications
+- Input device information
+- User data
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+## Contributing
 
-## Contact
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-For questions or issues:
-- GitHub Issues: [Create an issue](https://github.com/CaptainASIC/DraXon_FORGE/issues)
-- DraXon Discord: [Join our server](https://discord.gg/bjFZBRhw8Q)
+## License 
 
-Created by DraXon (DraXon Industries)
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the [LICENSE](LICENSE) file for details.
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)

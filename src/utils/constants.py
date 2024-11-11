@@ -1,8 +1,10 @@
-"""
-Constants used throughout the DraXon FORGE bot
-"""
+# utils/constants.py
 
-# Bot Configuration
+# Version info
+APP_VERSION = "2.0.0"
+BUILD_DATE = "Nov 2024"
+
+# Bot configuration
 BOT_DESCRIPTION = "Fleet Operations & Resource Guidance Engine"
 
 # Embed Colors (in decimal format)
@@ -44,7 +46,3 @@ DraXon FORGE is a system information collection and display bot.
 
 Your data is securely stored and can be updated at any time by using `/forge-collect` again.
 """
-
-# Version info
-APP_VERSION = "2.0.0"
-BUILD_DATE = "Nov 2024"

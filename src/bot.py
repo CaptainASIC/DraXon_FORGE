@@ -20,15 +20,13 @@ class DraXonFORGE(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.members = True
-        intents.presences = True  # Added presence intent
         
         super().__init__(
             command_prefix=commands.when_mentioned_or('!'),
             intents=intents,
             help_command=None,
             description=BOT_DESCRIPTION,
-            application_id=os.getenv('APPLICATION_ID'),
-            status=discord.Status.online  # Set status in init
+            application_id=os.getenv('APPLICATION_ID')
         )
         
         self.db_pool = None
@@ -99,7 +97,7 @@ class DraXonFORGE(commands.Bot):
         logger.info(f"Bot is in {len(guilds)} guild(s): {', '.join(guilds)}")
         logger.info(f"Serving {sum(g.member_count for g in self.guilds)} users")
         
-        # Set custom activity
+        # Set custom activity - EXACTLY like PULSE
         activity = discord.CustomActivity(name=BOT_DESCRIPTION)
         await self.change_presence(activity=activity)
 
