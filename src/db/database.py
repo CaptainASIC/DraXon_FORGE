@@ -128,20 +128,17 @@ class Database:
         """Save hangar data from JSON import"""
         try:
             ships = json.loads(ships_json)
-            # Group ships by name and manufacturer
+            # Group ships by name and count occurrences
             ship_counts = defaultdict(int)
-            ship_manufacturers = {}
             
             for ship in ships:
-                # Combine name and manufacturer for storage
+                # Combine manufacturer and name for the full ship name
                 full_name = f"{ship['manufacturer_name']} {ship['name']}"
                 ship_counts[full_name] += 1
-                ship_manufacturers[full_name] = ship['manufacturer_name']
             
             # Convert to regular dict for storage
             hangar_data = {
-                'counts': dict(ship_counts),
-                'manufacturers': ship_manufacturers
+                'counts': dict(ship_counts)
             }
             
             async with self.pool.acquire() as conn:
