@@ -1,7 +1,7 @@
 import asyncpg
 import redis.asyncio as redis
 import logging
-from typing import Dict, List
+from typing import Dict, List, Set, Tuple
 import json
 from collections import defaultdict
 
@@ -153,6 +153,9 @@ class Database:
             # Invalidate cache
             cache_key = f"hangar:{user_id}"
             await self.cache.delete(cache_key)
+            # Also invalidate fleet cache
+            await self.cache.delete("fleet_total")
+            await self.cache.delete("fleet_ships")
             return True
         except Exception as e:
             logger.error(f"Error saving hangar data: {e}")
@@ -188,6 +191,84 @@ class Database:
         except Exception as e:
             logger.error(f"Error retrieving hangar data: {e}")
             return None
+
+    async def get_fleet_total(self) -> Dict[str, int]:
+        """Get total fleet counts across all users"""
+        cache_key = "fleet_total"
+        
+        try:
+            # Try cache first
+            cached_data = await self.cache.get(cache_key)
+            if cached_data:
+                return json.loads(cached_data)
+
+            # If not in cache, calculate from database
+            fleet_counts = defaultdict(int)
+            
+            async with self.pool.acquire() as conn:
+                all_hangars = await conn.fetch('''
+                    SELECT ships FROM hangar_ships
+                ''')
+                
+                for record in all_hangars:
+                    hangar = json.loads(record['ships'])
+                    for ship, count in hangar.items():
+                        fleet_counts[ship] += count
+
+            result = dict(fleet_counts)
+            
+            # Cache the result
+            await self.cache.set(cache_key, json.dumps(result))
+            await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error getting fleet total: {e}")
+            return {}
+
+    async def get_ship_owners(self, ship_name: str) -> List[int]:
+        """Get list of user IDs who own a specific ship"""
+        try:
+            async with self.pool.acquire() as conn:
+                owners = await conn.fetch('''
+                    SELECT user_id, ships FROM hangar_ships
+                    WHERE ships ? $1
+                ''', ship_name)
+                
+                return [record['user_id'] for record in owners]
+        except Exception as e:
+            logger.error(f"Error getting ship owners: {e}")
+            return []
+
+    async def get_all_ship_models(self) -> Set[str]:
+        """Get a set of all unique ship models in the fleet"""
+        cache_key = "fleet_ships"
+        
+        try:
+            # Try cache first
+            cached_data = await self.cache.get(cache_key)
+            if cached_data:
+                return set(json.loads(cached_data))
+
+            # If not in cache, get from database
+            async with self.pool.acquire() as conn:
+                all_hangars = await conn.fetch('''
+                    SELECT ships FROM hangar_ships
+                ''')
+                
+                ship_models = set()
+                for record in all_hangars:
+                    hangar = json.loads(record['ships'])
+                    ship_models.update(hangar.keys())
+
+            # Cache the result
+            await self.cache.set(cache_key, json.dumps(list(ship_models)))
+            await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+            
+            return ship_models
+        except Exception as e:
+            logger.error(f"Error getting ship models: {e}")
+            return set()
 
     async def close(self):
         """Close database and cache connections"""

@@ -1,11 +1,13 @@
 # FORGE Bot (Fleet Operations & Resource Guidance Engine)
 
-FORGE is a Discord bot designed for managing system specifications and Star Citizen ship hangars. It provides a reliable system for users to share system information and track their fleet through Discord.
+FORGE is a Discord bot designed for managing system specifications and Star Citizen ship hangars. It provides a comprehensive system for users to share system information and track both individual and organizational fleets through Discord.
 
 ## Features
 
 - System specification collection and management
 - Star Citizen ship hangar tracking via XPLOR addon integration
+- Organization-wide fleet management
+- Ship owner lookup system
 - Auto-deleting hangar displays for clean channels
 - Redis-based caching system
 - PostgreSQL database for persistence
@@ -75,7 +77,7 @@ DraXon_FORGE/
 ├── src/
 │   ├── cogs/          # Bot command modules
 │   │   ├── system.py  # System commands
-│   │   └── hangar.py  # Hangar commands
+│   │   └── hangar.py  # Hangar and fleet commands
 │   ├── db/            # Database modules
 │   │   └── database.py # Database interface
 │   ├── utils/         # Utility modules
@@ -97,6 +99,14 @@ DraXon_FORGE/
 - `/forge-upload` - Upload your shiplist.json from XPLOR addon
 - `/forge-hangar [member]` - Display hangar contents (auto-deletes after 3 minutes)
 
+### Fleet Management
+- `/forge-fleet` - Display total fleet counts across all members
+- `/forge-locate` - Find members who own a specific ship model
+
+### Context Menu Commands
+- Right-click any member > Apps > View System Info
+- Right-click any member > Apps > View Hangar
+
 ## Database Schema
 
 The bot uses PostgreSQL for persistent storage and Redis for caching:
@@ -116,7 +126,10 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 1. Install the XPLOR addon for Star Citizen
 2. Export your ship list as JSON using the addon
 3. Use `/forge-upload` and upload the exported shiplist.json file
-4. View your hangar with `/forge-hangar` (display auto-deletes after 3 minutes)
+4. View your hangar with `/forge-hangar`
+5. Explore the organization's fleet:
+   - Use `/forge-fleet` to see total ship counts
+   - Use `/forge-locate` to find specific ship owners
 
 ## Contributing
 
@@ -128,9 +141,16 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 
 ## Version History
 
-### v2.1.1 (Current)
+### v2.2.0 (Current)
+- Added organization-wide fleet management
+- New `/forge-fleet` command for total ship counts
+- New `/forge-locate` command with ship model selector
+- Enhanced caching for fleet-wide queries
+
+### v2.1.1
 - Added manufacturer names to ship listings
-- Added auto-deletion for hangar displays (3 minutes)
+- Added auto-deletion for hangar displays
+- Added context menu commands
 - Enhanced error handling
 
 ### v2.1.0
