@@ -121,7 +121,7 @@ class PeripheralsModal(discord.ui.Modal, title="Input Devices"):
         
         embed = discord.Embed(
             title=f"{ICON_SUCCESS} Input Devices Saved",
-            description="Your input device information has been saved. Use `/forge-show` to display all your system information.",
+            description="Your input device information has been saved. Use `/forge-system` to display all your system information.",
             color=COLOR_SUCCESS
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -149,9 +149,9 @@ class ForgeCog(commands.GroupCog, name="forge"):
         modal = SystemSpecsModal(self, existing_info)
         await interaction.response.send_modal(modal)
 
-    @app_commands.command(name="show", description=CMD_SHOW_DESC)
+    @app_commands.command(name="system", description=CMD_SYSTEM_DESC)
     @app_commands.describe(member="The member whose system information you want to view (optional)")
-    async def show(self, interaction: discord.Interaction, member: discord.Member = None):
+    async def system(self, interaction: discord.Interaction, member: discord.Member = None):
         """Display collected system specifications"""
         # If no member specified, show own info
         target_user = member or interaction.user

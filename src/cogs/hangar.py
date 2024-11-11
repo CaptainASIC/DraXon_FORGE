@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 from typing import Optional
 from utils.constants import *
+import json
 
 class Hangar(commands.Cog):
     def __init__(self, bot):
@@ -11,49 +12,67 @@ class Hangar(commands.Cog):
     @app_commands.command(name="forge-upload", description=CMD_UPLOAD_DESC)
     async def forge_upload(self, interaction: discord.Interaction):
         """Upload hangar data from XPLOR addon JSON export"""
-        # Create modal for JSON input
-        class UploadModal(discord.ui.Modal, title=MODAL_UPLOAD_TITLE):
-            json_input = discord.ui.TextInput(
-                label=MODAL_UPLOAD_LABEL,
-                placeholder=MODAL_UPLOAD_PLACEHOLDER,
-                style=discord.TextStyle.paragraph,
-                required=True,
-                min_length=10
+        await interaction.response.send_message(
+            "Please upload your shiplist.json file from XPLOR addon",
+            ephemeral=True
+        )
+
+        def check(message):
+            return (message.author.id == interaction.user.id and 
+                   message.channel.id == interaction.channel_id and 
+                   message.attachments)
+
+        try:
+            # Wait for file upload
+            message = await self.bot.wait_for('message', timeout=60.0, check=check)
+            
+            if not message.attachments[0].filename.endswith('.json'):
+                await interaction.followup.send(
+                    "Please upload a JSON file.",
+                    ephemeral=True
+                )
+                return
+
+            # Read the JSON file
+            json_content = await message.attachments[0].read()
+            json_str = json_content.decode('utf-8')
+
+            # Save the hangar data
+            success = await self.bot.db.save_hangar_data(interaction.user.id, json_str)
+            
+            if success:
+                embed = discord.Embed(
+                    title=f"{ICON_SUCCESS} Hangar Updated",
+                    description=MSG_UPLOAD_SUCCESS,
+                    color=COLOR_SUCCESS
+                )
+            else:
+                embed = discord.Embed(
+                    title=f"{ICON_ERROR} Upload Error",
+                    description=MSG_UPLOAD_ERROR,
+                    color=COLOR_ERROR
+                )
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            # Delete the file upload message for cleanliness
+            try:
+                await message.delete()
+            except:
+                pass
+
+        except TimeoutError:
+            await interaction.followup.send(
+                "Upload timed out. Please try again.",
+                ephemeral=True
             )
-
-            async def on_submit(self, interaction: discord.Interaction):
-                try:
-                    # Save the hangar data
-                    success = await interaction.client.db.save_hangar_data(
-                        interaction.user.id,
-                        str(self.json_input)
-                    )
-                    
-                    if success:
-                        embed = discord.Embed(
-                            title=f"{ICON_SUCCESS} Hangar Updated",
-                            description=MSG_UPLOAD_SUCCESS,
-                            color=COLOR_SUCCESS
-                        )
-                    else:
-                        embed = discord.Embed(
-                            title=f"{ICON_ERROR} Upload Error",
-                            description=MSG_UPLOAD_ERROR,
-                            color=COLOR_ERROR
-                        )
-                    
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                    
-                except Exception as e:
-                    embed = discord.Embed(
-                        title=f"{ICON_ERROR} Error",
-                        description=f"An error occurred: {str(e)}",
-                        color=COLOR_ERROR
-                    )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        # Send the modal
-        await interaction.response.send_modal(UploadModal())
+        except Exception as e:
+            embed = discord.Embed(
+                title=f"{ICON_ERROR} Error",
+                description=f"An error occurred: {str(e)}",
+                color=COLOR_ERROR
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="forge-hangar", description=CMD_HANGAR_DESC)
     @app_commands.describe(member="View another member's hangar (optional)")

@@ -22,7 +22,7 @@ ICON_HANGAR = "🚀"
 
 # Command Descriptions
 CMD_COLLECT_DESC = "Collect system specifications"
-CMD_SHOW_DESC = "Display system specifications (yours or another member's)"
+CMD_SYSTEM_DESC = "Display system specifications (yours or another member's)"
 CMD_ABOUT_DESC = "Learn how to use DraXon FORGE"
 CMD_UPLOAD_DESC = "Upload your hangar data from XPLOR addon JSON export"
 CMD_HANGAR_DESC = "Display your hangar contents"
@@ -30,7 +30,7 @@ CMD_HANGAR_DESC = "Display your hangar contents"
 # Messages
 MSG_NO_INFO = "Please use `/forge-collect` first to gather system information."
 MSG_NO_MEMBER_INFO = "This member hasn't shared their system information yet."
-MSG_COLLECTED = "System specifications have been captured. Use `/forge-show` to display them."
+MSG_COLLECTED = "System specifications have been captured. Use `/forge-system` to display them."
 MSG_ERROR_TOKEN = "Error: DISCORD_TOKEN environment variable not set"
 
 # Hangar Messages
@@ -44,8 +44,8 @@ DraXon FORGE v2.1 is a comprehensive fleet and system management bot.
 
 **System Commands:**
 • `/forge-collect` - Opens a form to input your system specifications
-• `/forge-show` - Displays your saved system information
-• `/forge-show <member>` - View another member's system information
+• `/forge-system` - Displays your saved system information
+• `/forge-system <member>` - View another member's system information
 
 **Hangar Commands:**
 • `/forge-upload` - Upload your hangar data from XPLOR addon JSON export
@@ -59,8 +59,3 @@ DraXon FORGE v2.1 is a comprehensive fleet and system management bot.
 
 Your data is securely stored and can be updated at any time.
 """
-
-# Modal Labels
-MODAL_UPLOAD_TITLE = "Upload Hangar Data"
-MODAL_UPLOAD_LABEL = "Paste your XPLOR addon JSON export here"
-MODAL_UPLOAD_PLACEHOLDER = "Paste the contents of your exported shiplist.json file"

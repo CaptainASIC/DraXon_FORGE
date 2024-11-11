@@ -5,7 +5,7 @@ FORGE is a Discord bot designed for managing system specifications and Star Citi
 ## Features
 
 - System specification collection and management
-- Star Citizen ship hangar tracking
+- Star Citizen ship hangar tracking via XPLOR addon integration
 - Redis-based caching system
 - PostgreSQL database for persistence
 - Comprehensive logging system
@@ -88,12 +88,12 @@ DraXon_FORGE/
 
 ### System Management
 - `/forge-collect` - Opens a form to input system specifications
-- `/forge-show` - Displays your saved system information
-- `/forge-show <member>` - View another member's system information
+- `/forge-system` - Displays your saved system information
+- `/forge-system <member>` - View another member's system information
 - `/forge-about` - Shows information about using the bot
 
 ### Hangar Management
-- `/forge-upload` - Upload your hangar data from XPLOR addon JSON export
+- `/forge-upload` - Upload your shiplist.json from XPLOR addon
 - `/forge-hangar [member]` - Display your hangar contents or another member's
 
 ## Database Schema
@@ -110,6 +110,13 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 - Ship inventory (stored as JSONB)
 - Last update timestamp
 
+## Using the Hangar System
+
+1. Install the XPLOR addon for Star Citizen
+2. Export your ship list as JSON using the addon
+3. Use `/forge-upload` and upload the exported shiplist.json file
+4. View your hangar with `/forge-hangar`
+
 ## Contributing
 
 1. Fork the repository
@@ -124,6 +131,7 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 - Added Star Citizen ship hangar tracking
 - XPLOR addon JSON import support
 - Simplified hangar display format
+- Renamed forge-show to forge-system
 - Enhanced error handling
 
 ### v2.0.0
