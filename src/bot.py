@@ -86,18 +86,42 @@ class DraXonFORGE(commands.Bot):
             await self.db.close()
         await super().close()
 
+    async def create_bot_role(self, guild: discord.Guild) -> None:
+        """Create bot role in guild if it doesn't exist"""
+        bot_role = discord.utils.get(guild.roles, name="DraXon FORGE")
+        if not bot_role:
+            try:
+                # Create bot role with same color as bot's username
+                await guild.create_role(
+                    name="DraXon FORGE",
+                    color=self.user.color,
+                    reason="Bot role creation"
+                )
+                logger.info(f"Created bot role in {guild.name}")
+            except Exception as e:
+                logger.error(f"Failed to create bot role in {guild.name}: {e}")
+
+    async def on_guild_join(self, guild: discord.Guild):
+        """Handle bot joining a new guild"""
+        logger.info(f"Joined new guild: {guild.name}")
+        await self.create_bot_role(guild)
+
     async def on_ready(self):
         """Event handler for when the bot is ready"""
         logger.info(f'{self.user} has connected to Discord!')
         logger.info(f'Bot Version: {APP_VERSION}')
         logger.info(f'Build Date: {BUILD_DATE}')
         
+        # Create bot role in each guild if it doesn't exist
+        for guild in self.guilds:
+            await self.create_bot_role(guild)
+        
         # Print guilds the bot is in
         guilds = [guild.name for guild in self.guilds]
         logger.info(f"Bot is in {len(guilds)} guild(s): {', '.join(guilds)}")
         logger.info(f"Serving {sum(g.member_count for g in self.guilds)} users")
         
-        # Set custom activity - EXACTLY like PULSE
+        # Set custom activity
         activity = discord.CustomActivity(name=BOT_DESCRIPTION)
         await self.change_presence(activity=activity)
 
