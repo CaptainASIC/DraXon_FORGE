@@ -6,6 +6,7 @@ from utils.constants import *
 import json
 import asyncio
 import logging
+from collections import defaultdict
 
 logger = logging.getLogger('DraXon_FORGE')
 
@@ -68,25 +69,60 @@ class Hangar(commands.Cog):
     async def display_hangar(self, target_id: int, target_name: str):
         """Helper function to format hangar display"""
         # Get hangar data
-        ship_counts = await self.bot.db.get_hangar_data(target_id)
-        logger.info(f"Retrieved hangar data for {target_id}: {ship_counts}")
+        ships = await self.bot.db.get_hangar_data(target_id)
+        logger.info(f"Retrieved hangar data for {target_id}: {ships}")
         
-        if not ship_counts:
+        if not ships:
             return None
 
-        # Sort ships by name
-        sorted_ships = sorted(ship_counts.items())
+        # Group ships by manufacturer and name
+        ship_groups = defaultdict(list)
+        for ship in ships:
+            key = f"{ship['manufacturer_name']} {ship['name']}"
+            ship_groups[key].append(ship)
+
+        # Sort manufacturers and ships
+        sorted_manufacturers = sorted(set(ship['manufacturer_name'] for ship in ships))
         
         # Build the response message
-        response = f"The following ships are in {target_name}'s hangar:\n"
-        for ship_name, count in sorted_ships:
-            response += f"{count}  x  {ship_name}\n"
+        response = [f"The following ships are in {target_name}'s hangar:\n"]
+        
+        for manufacturer in sorted_manufacturers:
+            # Get all ships for this manufacturer
+            manu_ships = [s for s in ships if s['manufacturer_name'] == manufacturer]
+            if manu_ships:
+                response.append(f"\n**{manufacturer}**")
+                
+                # Group and sort ships by base name
+                ship_names = sorted(set(s['name'] for s in manu_ships))
+                for name in ship_names:
+                    # Get all instances of this ship
+                    instances = [s for s in manu_ships if s['name'] == name]
+                    count = len(instances)
+                    
+                    # Check if any have custom names
+                    custom_names = [s['ship_name'] for s in instances if s['ship_name'] != name]
+                    custom_str = f" ({', '.join(custom_names)})" if custom_names else ""
+                    
+                    # Add LTI and Warbond indicators
+                    lti_count = sum(1 for s in instances if s['lti'])
+                    wb_count = sum(1 for s in instances if s['warbond'])
+                    status = []
+                    if lti_count == count:
+                        status.append("LTI")
+                    elif lti_count > 0:
+                        status.append(f"{lti_count} LTI")
+                    if wb_count > 0:
+                        status.append(f"{wb_count} Warbond")
+                    status_str = f" [{', '.join(status)}]" if status else ""
+                    
+                    response.append(f"• {count} x {name}{status_str}{custom_str}")
         
         # Add total count
-        total_ships = sum(count for _, count in sorted_ships)
-        response += f"\nTotal ships: {total_ships}"
+        total_ships = len(ships)
+        response.append(f"\nTotal ships: {total_ships}")
         
-        return response
+        return "\n".join(response)
 
     @app_commands.command(name="forge-hangar", description=CMD_HANGAR_DESC)
     @app_commands.describe(member="View another member's hangar (optional)")
@@ -139,26 +175,44 @@ class Hangar(commands.Cog):
 
         try:
             # Get fleet totals
-            fleet_counts = await self.bot.db.get_fleet_total()
+            fleet_data = await self.bot.db.get_fleet_total()
             
-            if not fleet_counts:
+            if not fleet_data:
                 await interaction.followup.send(MSG_NO_FLEET_DATA, ephemeral=True)
                 return
 
-            # Sort ships by name
-            sorted_ships = sorted(fleet_counts.items())
+            # Sort manufacturers and ships
+            sorted_ships = sorted(fleet_data.items())
             
             # Build the response message
-            response = "Organization Fleet Summary:\n"
-            for ship_name, count in sorted_ships:
-                response += f"{count}  x  {ship_name}\n"
+            response = ["Organization Fleet Summary:\n"]
+            
+            for ship_name, data in sorted_ships:
+                count = data['count']
+                lti_count = data['lti_count']
+                wb_count = data['warbond_count']
+                
+                # Add status indicators
+                status = []
+                if lti_count == count:
+                    status.append("All LTI")
+                elif lti_count > 0:
+                    status.append(f"{lti_count} LTI")
+                if wb_count > 0:
+                    status.append(f"{wb_count} Warbond")
+                status_str = f" [{', '.join(status)}]" if status else ""
+                
+                # Add custom names if any
+                custom_str = f" ({data['custom_names']})" if data.get('custom_names') else ""
+                
+                response.append(f"{count} x {ship_name}{status_str}{custom_str}")
             
             # Add total count
-            total_ships = sum(count for _, count in sorted_ships)
-            response += f"\nTotal fleet size: {total_ships} ships"
+            total_ships = sum(data['count'] for data in fleet_data.values())
+            response.append(f"\nTotal fleet size: {total_ships} ships")
 
             # Send message and set up deletion after 3 minutes
-            message = await interaction.followup.send(response)
+            message = await interaction.followup.send("\n".join(response))
             
             async def delete_message():
                 await asyncio.sleep(180)
@@ -204,9 +258,9 @@ class Hangar(commands.Cog):
                 await select_interaction.response.defer()
                 
                 ship_name = select.values[0]
-                owner_ids = await self.bot.db.get_ship_owners(ship_name)
+                owners = await self.bot.db.get_ship_owners(ship_name)
                 
-                if not owner_ids:
+                if not owners:
                     await select_interaction.followup.send(
                         f"No owners found for {ship_name}",
                         ephemeral=True
@@ -214,13 +268,13 @@ class Hangar(commands.Cog):
                     return
 
                 # Get member objects and filter out None (left server)
-                owners = [
-                    select_interaction.guild.get_member(uid)
-                    for uid in owner_ids
-                ]
-                owners = [owner for owner in owners if owner is not None]
-                
-                if not owners:
+                members = []
+                for owner in owners:
+                    member = select_interaction.guild.get_member(owner['user_id'])
+                    if member:
+                        members.append((member, owner))
+
+                if not members:
                     await select_interaction.followup.send(
                         f"All owners of {ship_name} have left the server",
                         ephemeral=True
@@ -228,11 +282,19 @@ class Hangar(commands.Cog):
                     return
 
                 # Format response
-                response = f"Members who own {ship_name}:\n"
-                for owner in sorted(owners, key=lambda m: m.display_name.lower()):
-                    response += f"• {owner.display_name}\n"
+                response = [f"Members who own {ship_name}:"]
+                for member, data in sorted(members, key=lambda x: x[0].display_name.lower()):
+                    ship_info = []
+                    if data['ship_name'] != ship_name:
+                        ship_info.append(f"Named: {data['ship_name']}")
+                    if data['lti']:
+                        ship_info.append("LTI")
+                    if data['warbond']:
+                        ship_info.append("Warbond")
+                    info_str = f" ({', '.join(ship_info)})" if ship_info else ""
+                    response.append(f"• {member.display_name}{info_str}")
 
-                await select_interaction.followup.send(response, ephemeral=True)
+                await select_interaction.followup.send("\n".join(response), ephemeral=True)
 
             select.callback = select_callback
             
