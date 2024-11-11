@@ -236,6 +236,14 @@ class Database:
 
             # If not in cache, calculate from database
             async with self.pool.acquire() as conn:
+                # First check if we have any ships at all
+                count = await conn.fetchval('SELECT COUNT(*) FROM hangar_ships')
+                logger.info(f"Total ships in database: {count}")
+                
+                if count == 0:
+                    return {}
+
+                # Get fleet statistics
                 rows = await conn.fetch('''
                     SELECT 
                         manufacturer_name, name,
@@ -248,6 +256,8 @@ class Database:
                     ORDER BY manufacturer_name, name
                 ''')
                 
+                logger.info(f"Fleet query returned {len(rows)} rows")
+                
                 fleet_data = {}
                 for row in rows:
                     key = f"{row['manufacturer_name']} {row['name']}"
@@ -257,6 +267,7 @@ class Database:
                         'warbond_count': row['warbond_count'],
                         'custom_names': row['custom_names'] if row['custom_names'] != row['name'] else None
                     }
+                    logger.info(f"Added fleet data for {key}: {fleet_data[key]}")
 
             # Cache the result
             await self.cache.set(cache_key, json.dumps(fleet_data))
@@ -297,12 +308,20 @@ class Database:
 
             # If not in cache, get from database
             async with self.pool.acquire() as conn:
+                # First check if we have any ships at all
+                count = await conn.fetchval('SELECT COUNT(*) FROM hangar_ships')
+                logger.info(f"Total ships in database: {count}")
+                
+                if count == 0:
+                    return set()
+
                 rows = await conn.fetch('''
                     SELECT DISTINCT manufacturer_name || ' ' || name as full_name
                     FROM hangar_ships
                     ORDER BY full_name
                 ''')
                 
+                logger.info(f"Found {len(rows)} unique ship models")
                 ship_models = {row['full_name'] for row in rows}
 
             # Cache the result
