@@ -128,7 +128,7 @@ class Database:
         """Save hangar data from JSON import"""
         try:
             ships = json.loads(ships_json)
-            # Group ships by name and count occurrences
+            # Create a simple dictionary of ship counts
             ship_counts = defaultdict(int)
             
             for ship in ships:
@@ -136,10 +136,9 @@ class Database:
                 full_name = f"{ship['manufacturer_name']} {ship['name']}"
                 ship_counts[full_name] += 1
             
-            # Convert to regular dict for storage
-            hangar_data = {
-                'counts': dict(ship_counts)
-            }
+            # Store as simple dictionary
+            ship_data = dict(ship_counts)
+            logger.info(f"Saving ship data: {ship_data}")  # Debug log
             
             async with self.pool.acquire() as conn:
                 await conn.execute('''
@@ -149,7 +148,7 @@ class Database:
                     DO UPDATE SET 
                         ships = $2,
                         updated_at = CURRENT_TIMESTAMP
-                ''', user_id, json.dumps(hangar_data))
+                ''', user_id, json.dumps(ship_data))
                 
             # Invalidate cache
             cache_key = f"hangar:{user_id}"
@@ -163,23 +162,31 @@ class Database:
         """Get hangar data from cache or database"""
         cache_key = f"hangar:{user_id}"
         
-        # Try cache first
-        cached_data = await self.cache.get(cache_key)
-        if cached_data:
-            return json.loads(cached_data)
-            
-        # If not in cache, get from database
-        async with self.pool.acquire() as conn:
-            data = await conn.fetchval('''
-                SELECT ships FROM hangar_ships WHERE user_id = $1
-            ''', user_id)
-            
-            if data:
-                # Cache the result
-                await self.cache.set(cache_key, data)
-                await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
-                return json.loads(data)
+        try:
+            # Try cache first
+            cached_data = await self.cache.get(cache_key)
+            if cached_data:
+                data = json.loads(cached_data)
+                logger.info(f"Retrieved cached hangar data: {data}")  # Debug log
+                return data
                 
+            # If not in cache, get from database
+            async with self.pool.acquire() as conn:
+                data = await conn.fetchval('''
+                    SELECT ships FROM hangar_ships WHERE user_id = $1
+                ''', user_id)
+                
+                if data:
+                    parsed_data = json.loads(data)
+                    logger.info(f"Retrieved database hangar data: {parsed_data}")  # Debug log
+                    # Cache the result
+                    await self.cache.set(cache_key, data)
+                    await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+                    return parsed_data
+                    
+                return None
+        except Exception as e:
+            logger.error(f"Error retrieving hangar data: {e}")
             return None
 
     async def close(self):

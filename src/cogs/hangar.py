@@ -50,6 +50,7 @@ class Hangar(commands.Cog):
             await interaction.followup.send(embed=embed, ephemeral=True)
 
         except Exception as e:
+            logger.error(f"Error in forge-upload: {str(e)}")
             embed = discord.Embed(
                 title=f"{ICON_ERROR} Error",
                 description=f"An error occurred: {str(e)}",
@@ -68,9 +69,10 @@ class Hangar(commands.Cog):
             target_name = member.display_name if member else interaction.user.display_name
 
             # Get hangar data
-            hangar_data = await self.bot.db.get_hangar_data(target_id)
+            ship_counts = await self.bot.db.get_hangar_data(target_id)
+            logger.info(f"Retrieved hangar data for {target_id}: {ship_counts}")
             
-            if not hangar_data:
+            if not ship_counts:
                 await interaction.followup.send(
                     MSG_NO_MEMBER_HANGAR if member else MSG_NO_HANGAR,
                     ephemeral=True
@@ -78,10 +80,7 @@ class Hangar(commands.Cog):
                 return
 
             # Sort ships by name
-            ships = []
-            for ship_name, count in hangar_data['counts'].items():
-                ships.append((ship_name, count))
-            sorted_ships = sorted(ships)
+            sorted_ships = sorted(ship_counts.items())
             
             # Build the response message
             response = f"The following ships are in {target_name}'s hangar:\n"
@@ -109,6 +108,8 @@ class Hangar(commands.Cog):
             asyncio.create_task(delete_message())
 
         except Exception as e:
+            logger.error(f"Error in forge-hangar: {str(e)}")
+            logger.error(f"Hangar data that caused error: {ship_counts if 'ship_counts' in locals() else 'Not retrieved'}")
             embed = discord.Embed(
                 title=f"{ICON_ERROR} Error",
                 description=f"An error occurred: {str(e)}",
