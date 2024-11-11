@@ -148,6 +148,7 @@ class Database:
         """Save hangar data from JSON import with detailed ship information"""
         try:
             ships = json.loads(ships_json)
+            logger.info(f"Saving {len(ships)} ships for user {user_id}")
             
             async with self.pool.acquire() as conn:
                 # First, delete existing ships for this user
@@ -184,6 +185,14 @@ class Database:
             await self.cache.delete(cache_key)
             await self.cache.delete("fleet_total")
             await self.cache.delete("fleet_ships")
+            
+            # Verify the data was saved
+            async with self.pool.acquire() as conn:
+                count = await conn.fetchval('''
+                    SELECT COUNT(*) FROM hangar_ships WHERE user_id = $1
+                ''', user_id)
+                logger.info(f"Saved {count} ships for user {user_id}")
+            
             return True
         except Exception as e:
             logger.error(f"Error saving hangar data: {e}")
@@ -241,6 +250,7 @@ class Database:
                 logger.info(f"Total ships in database: {count}")
                 
                 if count == 0:
+                    logger.info("No ships found in database")
                     return {}
 
                 # Get fleet statistics
@@ -269,11 +279,15 @@ class Database:
                     }
                     logger.info(f"Added fleet data for {key}: {fleet_data[key]}")
 
-            # Cache the result
-            await self.cache.set(cache_key, json.dumps(fleet_data))
-            await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
-            
-            return fleet_data
+                if not fleet_data:
+                    logger.error("No fleet data generated from query results")
+                    return {}
+
+                # Cache the result
+                await self.cache.set(cache_key, json.dumps(fleet_data))
+                await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+                
+                return fleet_data
         except Exception as e:
             logger.error(f"Error getting fleet total: {e}")
             return {}
@@ -313,6 +327,7 @@ class Database:
                 logger.info(f"Total ships in database: {count}")
                 
                 if count == 0:
+                    logger.info("No ships found in database")
                     return set()
 
                 rows = await conn.fetch('''
@@ -324,11 +339,15 @@ class Database:
                 logger.info(f"Found {len(rows)} unique ship models")
                 ship_models = {row['full_name'] for row in rows}
 
-            # Cache the result
-            await self.cache.set(cache_key, json.dumps(list(ship_models)))
-            await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
-            
-            return ship_models
+                if not ship_models:
+                    logger.error("No ship models found in query results")
+                    return set()
+
+                # Cache the result
+                await self.cache.set(cache_key, json.dumps(list(ship_models)))
+                await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+                
+                return ship_models
         except Exception as e:
             logger.error(f"Error getting ship models: {e}")
             return set()

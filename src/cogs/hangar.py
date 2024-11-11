@@ -21,6 +21,45 @@ class Hangar(commands.Cog):
         )
         self.bot.tree.add_command(self.context_menu)
 
+    @app_commands.command(name="forge-debug", description="Debug database state")
+    @app_commands.default_permissions(administrator=True)
+    async def forge_debug(self, interaction: discord.Interaction):
+        """Debug command to check database state"""
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            async with self.bot.db.pool.acquire() as conn:
+                # Check total ships
+                ship_count = await conn.fetchval('SELECT COUNT(*) FROM hangar_ships')
+                # Check unique users
+                user_count = await conn.fetchval('SELECT COUNT(DISTINCT user_id) FROM hangar_ships')
+                # Check manufacturers
+                manu_count = await conn.fetchval('SELECT COUNT(DISTINCT manufacturer_name) FROM hangar_ships')
+                # Sample ship data
+                sample = await conn.fetch('SELECT * FROM hangar_ships LIMIT 1')
+                
+                debug_info = [
+                    "**Database Debug Info:**",
+                    f"Total ships: {ship_count}",
+                    f"Unique users: {user_count}",
+                    f"Manufacturers: {manu_count}",
+                    "\nSample ship data:" if sample else "No ships found in database",
+                ]
+                
+                if sample:
+                    ship = dict(sample[0])
+                    debug_info.extend([
+                        f"Ship code: {ship['ship_code']}",
+                        f"Name: {ship['name']}",
+                        f"Manufacturer: {ship['manufacturer_name']}",
+                        f"User ID: {ship['user_id']}"
+                    ])
+                
+                await interaction.followup.send("\n".join(debug_info), ephemeral=True)
+        except Exception as e:
+            logger.error(f"Error in forge-debug: {str(e)}")
+            await interaction.followup.send(f"Error: {str(e)}", ephemeral=True)
+
     @app_commands.command(name="forge-upload", description=CMD_UPLOAD_DESC)
     @app_commands.describe(file="Your shiplist.json file from XPLOR addon")
     async def forge_upload(self, interaction: discord.Interaction, file: discord.Attachment):
@@ -174,38 +213,59 @@ class Hangar(commands.Cog):
         await interaction.response.defer()
 
         try:
+            # First check if we have any ships
+            async with self.bot.db.pool.acquire() as conn:
+                ship_count = await conn.fetchval('SELECT COUNT(*) FROM hangar_ships')
+                logger.info(f"Total ships in database before fleet query: {ship_count}")
+                
+                if ship_count == 0:
+                    await interaction.followup.send(MSG_NO_FLEET_DATA, ephemeral=True)
+                    return
+
             # Get fleet totals
             fleet_data = await self.bot.db.get_fleet_total()
+            logger.info(f"Retrieved fleet data: {fleet_data}")
             
             if not fleet_data:
+                logger.error("No fleet data returned from database")
                 await interaction.followup.send(MSG_NO_FLEET_DATA, ephemeral=True)
                 return
 
-            # Sort manufacturers and ships
-            sorted_ships = sorted(fleet_data.items())
+            # Group by manufacturer
+            manu_groups = defaultdict(list)
+            for ship_name, data in fleet_data.items():
+                # Split ship name into manufacturer and model
+                parts = ship_name.split(' ', 1)
+                if len(parts) == 2:
+                    manufacturer, model = parts
+                    manu_groups[manufacturer].append((model, data))
             
             # Build the response message
             response = ["Organization Fleet Summary:\n"]
             
-            for ship_name, data in sorted_ships:
-                count = data['count']
-                lti_count = data['lti_count']
-                wb_count = data['warbond_count']
-                
-                # Add status indicators
-                status = []
-                if lti_count == count:
-                    status.append("All LTI")
-                elif lti_count > 0:
-                    status.append(f"{lti_count} LTI")
-                if wb_count > 0:
-                    status.append(f"{wb_count} Warbond")
-                status_str = f" [{', '.join(status)}]" if status else ""
-                
-                # Add custom names if any
-                custom_str = f" ({data['custom_names']})" if data.get('custom_names') else ""
-                
-                response.append(f"{count} x {ship_name}{status_str}{custom_str}")
+            # Sort manufacturers
+            for manufacturer in sorted(manu_groups.keys()):
+                response.append(f"\n**{manufacturer}**")
+                # Sort ships within manufacturer
+                for model, data in sorted(manu_groups[manufacturer]):
+                    count = data['count']
+                    lti_count = data['lti_count']
+                    wb_count = data['warbond_count']
+                    
+                    # Add status indicators
+                    status = []
+                    if lti_count == count:
+                        status.append("LTI")
+                    elif lti_count > 0:
+                        status.append(f"{lti_count} LTI")
+                    if wb_count > 0:
+                        status.append(f"{wb_count} Warbond")
+                    status_str = f" [{', '.join(status)}]" if status else ""
+                    
+                    # Add custom names if any
+                    custom_str = f" ({data['custom_names']})" if data.get('custom_names') else ""
+                    
+                    response.append(f"• {count} x {model}{status_str}{custom_str}")
             
             # Add total count
             total_ships = sum(data['count'] for data in fleet_data.values())
@@ -240,6 +300,7 @@ class Hangar(commands.Cog):
         try:
             # Get all ship models for autocomplete
             ship_models = await self.bot.db.get_all_ship_models()
+            logger.info(f"Retrieved ship models: {ship_models}")
             
             if not ship_models:
                 await interaction.response.send_message(MSG_NO_FLEET_DATA, ephemeral=True)
