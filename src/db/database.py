@@ -241,7 +241,8 @@ class Database:
                         manufacturer_name, name,
                         COUNT(*) as count,
                         COUNT(*) FILTER (WHERE lti = true) as lti_count,
-                        COUNT(*) FILTER (WHERE warbond = true) as warbond_count
+                        COUNT(*) FILTER (WHERE warbond = true) as warbond_count,
+                        STRING_AGG(DISTINCT ship_name, ', ' ORDER BY ship_name) as custom_names
                     FROM hangar_ships
                     GROUP BY manufacturer_name, name
                     ORDER BY manufacturer_name, name
@@ -253,7 +254,8 @@ class Database:
                     fleet_data[key] = {
                         'count': row['count'],
                         'lti_count': row['lti_count'],
-                        'warbond_count': row['warbond_count']
+                        'warbond_count': row['warbond_count'],
+                        'custom_names': row['custom_names'] if row['custom_names'] != row['name'] else None
                     }
 
             # Cache the result
@@ -272,7 +274,7 @@ class Database:
                 rows = await conn.fetch('''
                     SELECT 
                         user_id, ship_name, lti, warbond,
-                        pledge_date, pledge_cost
+                        pledge_date, pledge_cost, pledge_name
                     FROM hangar_ships
                     WHERE manufacturer_name || ' ' || name = $1
                     ORDER BY pledge_date
