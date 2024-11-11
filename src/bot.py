@@ -69,6 +69,8 @@ class DraXonFORGE(commands.Bot):
             logger.info("Loading cogs...")
             await self.load_extension('cogs.system')
             logger.info("System cog loaded")
+            await self.load_extension('cogs.hangar')
+            logger.info("Hangar cog loaded")
             
             # Sync commands with Discord
             logger.info("Syncing commands...")

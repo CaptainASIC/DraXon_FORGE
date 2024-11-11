@@ -1,11 +1,11 @@
 # FORGE Bot (Fleet Operations & Resource Guidance Engine)
 
-FORGE is a Discord bot designed for collecting and managing system specifications. It provides a reliable system for users to share and view system information through Discord.
+FORGE is a Discord bot designed for managing system specifications and Star Citizen ship hangars. It provides a reliable system for users to share system information and track their fleet through Discord.
 
 ## Features
 
-- System specification collection
-- Input device tracking
+- System specification collection and management
+- Star Citizen ship hangar tracking
 - Redis-based caching system
 - PostgreSQL database for persistence
 - Comprehensive logging system
@@ -53,6 +53,19 @@ REDIS_DB=0
 REDIS_PASSWORD=your_redis_password
 ```
 
+## Discord Bot Setup
+
+1. Required Permissions:
+   - View Channels
+   - Send Messages
+   - Send Messages in Threads
+   - Read Message History
+   - Add Reactions
+   - Use Slash Commands
+   - Manage Roles
+
+2. Permission Integer: `326417516608`
+
 ## Project Structure
 
 ```
@@ -60,7 +73,8 @@ DraXon_FORGE/
 ├── env/                # Environment variables
 ├── src/
 │   ├── cogs/          # Bot command modules
-│   │   └── system.py  # System commands
+│   │   ├── system.py  # System commands
+│   │   └── hangar.py  # Hangar commands
 │   ├── db/            # Database modules
 │   │   └── database.py # Database interface
 │   ├── utils/         # Utility modules
@@ -72,17 +86,29 @@ DraXon_FORGE/
 
 ## Commands
 
+### System Management
 - `/forge-collect` - Opens a form to input system specifications
 - `/forge-show` - Displays your saved system information
 - `/forge-show <member>` - View another member's system information
 - `/forge-about` - Shows information about using the bot
 
-## Database
+### Hangar Management
+- `/forge-upload` - Upload your hangar data from XPLOR addon JSON export
+- `/forge-hangar [member]` - Display your hangar contents or another member's
+
+## Database Schema
 
 The bot uses PostgreSQL for persistent storage and Redis for caching:
-- System specifications
+
+### System Information Table
+- User system specifications
 - Input device information
 - User data
+
+### Hangar Ships Table
+- User ID
+- Ship inventory (stored as JSONB)
+- Last update timestamp
 
 ## Contributing
 
@@ -91,6 +117,19 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
+
+## Version History
+
+### v2.1.0 (Current)
+- Added Star Citizen ship hangar tracking
+- XPLOR addon JSON import support
+- Simplified hangar display format
+- Enhanced error handling
+
+### v2.0.0
+- Initial public release
+- System specification collection
+- Basic user information management
 
 ## License 
 

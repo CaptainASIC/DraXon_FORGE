@@ -1,7 +1,9 @@
 import asyncpg
 import redis.asyncio as redis
 import logging
-from typing import Tuple
+from typing import Dict, List
+import json
+from collections import Counter
 
 logger = logging.getLogger('DraXon_FORGE')
 
@@ -25,6 +27,15 @@ async def init_db(database_url: str) -> asyncpg.Pool:
                     keyboard TEXT,
                     mouse TEXT,
                     other_controllers TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # Create hangar table
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS hangar_ships (
+                    user_id BIGINT PRIMARY KEY,
+                    ships JSONB NOT NULL,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -57,7 +68,7 @@ class Database:
         self.pool = pool
         self.cache = cache
         
-    async def get_system_info(self, user_id: int):
+    async def get_system_info(self, user_id: int) -> Dict:
         """Get system information from cache or database"""
         # Try cache first
         cache_key = f"system_info:{user_id}"
@@ -112,6 +123,54 @@ class Database:
         # Invalidate cache
         cache_key = f"system_info:{user_id}"
         await self.cache.delete(cache_key)
+
+    async def save_hangar_data(self, user_id: int, ships_json: str):
+        """Save hangar data from JSON import"""
+        try:
+            ships = json.loads(ships_json)
+            # Count ships by name
+            ship_counts = Counter(ship['name'] for ship in ships)
+            
+            async with self.pool.acquire() as conn:
+                await conn.execute('''
+                    INSERT INTO hangar_ships (user_id, ships)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) 
+                    DO UPDATE SET 
+                        ships = $2,
+                        updated_at = CURRENT_TIMESTAMP
+                ''', user_id, json.dumps(dict(ship_counts)))
+                
+            # Invalidate cache
+            cache_key = f"hangar:{user_id}"
+            await self.cache.delete(cache_key)
+            return True
+        except Exception as e:
+            logger.error(f"Error saving hangar data: {e}")
+            return False
+
+    async def get_hangar_data(self, user_id: int) -> Dict:
+        """Get hangar data from cache or database"""
+        cache_key = f"hangar:{user_id}"
+        
+        # Try cache first
+        cached_data = await self.cache.get(cache_key)
+        if cached_data:
+            return json.loads(cached_data)
+            
+        # If not in cache, get from database
+        async with self.pool.acquire() as conn:
+            data = await conn.fetchval('''
+                SELECT ships FROM hangar_ships WHERE user_id = $1
+            ''', user_id)
+            
+            if data:
+                # Cache the result
+                await self.cache.set(cache_key, data)
+                await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+                return json.loads(data)
+                
+            return None
 
     async def close(self):
         """Close database and cache connections"""
