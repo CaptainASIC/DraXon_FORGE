@@ -1,7 +1,7 @@
 # utils/constants.py
 
 # Version info
-APP_VERSION = "2.2.2"
+APP_VERSION = "2.3.0"
 BUILD_DATE = "Nov 2024"
 
 # Bot configuration
@@ -43,32 +43,35 @@ MSG_NO_HANGAR = "No hangar data found. Use `/forge-upload` to import your ships.
 MSG_NO_MEMBER_HANGAR = "This member hasn't uploaded their hangar data yet."
 MSG_NO_FLEET_DATA = "No fleet data available. Members need to upload their hangar data first."
 
-MSG_ABOUT = """
-DraXon FORGE v2.2.2 is a comprehensive fleet and system management bot.
+MSG_ABOUT = """```md
+# DraXon FORGE v2.3.0
 
-**System Commands:**
-• `/forge-collect` - Opens a form to input your system specifications
-• `/forge-system` - Displays your saved system information
-• `/forge-system <member>` - View another member's system information
+A comprehensive fleet and system management bot.
 
-**Hangar Commands:**
-• `/forge-upload` - Upload your hangar data from XPLOR addon JSON export
-• `/forge-hangar [member]` - Display your hangar contents or another member's (auto-deletes after 3 minutes)
+## System Commands
+• /forge-collect     - Opens a form to input your system specifications
+• /forge-system      - Displays your saved system information
+• /forge-system @user - View another member's system information
 
-**Fleet Management:**
-• `/forge-fleet` - Display total fleet counts across all members
-• `/forge-locate` - Find members who own a specific ship model
+## Hangar Commands
+• /forge-upload      - Upload your hangar data from XPLOR addon JSON export
+• /forge-hangar      - Display your hangar contents
+• /forge-hangar @user - Display another member's hangar contents
 
-**Quick Access:**
-• Right-click any member > Apps > View System Info
-• Right-click any member > Apps > View Hangar
+## Fleet Management
+• /forge-fleet       - Display total fleet counts across all members
+• /forge-locate      - Find members who own a specific ship model
 
-**Getting Started:**
-1. Use `/forge-collect` to register your system details
+## Quick Access
+• Right-click member > Apps > View System Info
+• Right-click member > Apps > View Hangar
+
+## Getting Started
+1. Use /forge-collect to register your system details
 2. Export your hangar data from XPLOR addon as JSON
-3. Upload your hangar data with `/forge-upload`
-4. View your hangar with `/forge-hangar`
-5. Explore the organization's fleet with `/forge-fleet` and `/forge-locate`
+3. Upload your hangar data with /forge-upload
+4. View your hangar with /forge-hangar
+5. Explore the fleet with /forge-fleet and /forge-locate
 
 Your data is securely stored and can be updated at any time.
-"""
+```"""
