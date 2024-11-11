@@ -1,7 +1,7 @@
 # utils/constants.py
 
 # Version info
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 BUILD_DATE = "Nov 2024"
 
 # Bot configuration
@@ -25,7 +25,7 @@ CMD_COLLECT_DESC = "Collect system specifications"
 CMD_SYSTEM_DESC = "Display system specifications (yours or another member's)"
 CMD_ABOUT_DESC = "Learn how to use DraXon FORGE"
 CMD_UPLOAD_DESC = "Upload your hangar data from XPLOR addon JSON export"
-CMD_HANGAR_DESC = "Display your hangar contents"
+CMD_HANGAR_DESC = "Display your hangar contents (auto-deletes after 3 minutes)"
 
 # Messages
 MSG_NO_INFO = "Please use `/forge-collect` first to gather system information."
@@ -40,7 +40,7 @@ MSG_NO_HANGAR = "No hangar data found. Use `/forge-upload` to import your ships.
 MSG_NO_MEMBER_HANGAR = "This member hasn't uploaded their hangar data yet."
 
 MSG_ABOUT = """
-DraXon FORGE v2.1 is a comprehensive fleet and system management bot.
+DraXon FORGE v2.1.1 is a comprehensive fleet and system management bot.
 
 **System Commands:**
 • `/forge-collect` - Opens a form to input your system specifications
@@ -49,7 +49,7 @@ DraXon FORGE v2.1 is a comprehensive fleet and system management bot.
 
 **Hangar Commands:**
 • `/forge-upload` - Upload your hangar data from XPLOR addon JSON export
-• `/forge-hangar [member]` - Display your hangar contents or another member's
+• `/forge-hangar [member]` - Display your hangar contents or another member's (auto-deletes after 3 minutes)
 
 **Getting Started:**
 1. Use `/forge-collect` to register your system details

@@ -3,7 +3,7 @@ import redis.asyncio as redis
 import logging
 from typing import Dict, List
 import json
-from collections import Counter
+from collections import defaultdict
 
 logger = logging.getLogger('DraXon_FORGE')
 
@@ -128,8 +128,21 @@ class Database:
         """Save hangar data from JSON import"""
         try:
             ships = json.loads(ships_json)
-            # Count ships by name
-            ship_counts = Counter(ship['name'] for ship in ships)
+            # Group ships by name and manufacturer
+            ship_counts = defaultdict(int)
+            ship_manufacturers = {}
+            
+            for ship in ships:
+                # Combine name and manufacturer for storage
+                full_name = f"{ship['manufacturer_name']} {ship['name']}"
+                ship_counts[full_name] += 1
+                ship_manufacturers[full_name] = ship['manufacturer_name']
+            
+            # Convert to regular dict for storage
+            hangar_data = {
+                'counts': dict(ship_counts),
+                'manufacturers': ship_manufacturers
+            }
             
             async with self.pool.acquire() as conn:
                 await conn.execute('''
@@ -139,7 +152,7 @@ class Database:
                     DO UPDATE SET 
                         ships = $2,
                         updated_at = CURRENT_TIMESTAMP
-                ''', user_id, json.dumps(dict(ship_counts)))
+                ''', user_id, json.dumps(hangar_data))
                 
             # Invalidate cache
             cache_key = f"hangar:{user_id}"

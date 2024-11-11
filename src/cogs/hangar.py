@@ -4,6 +4,7 @@ from discord.ext import commands
 from typing import Optional
 from utils.constants import *
 import json
+import asyncio
 
 class Hangar(commands.Cog):
     def __init__(self, bot):
@@ -74,7 +75,7 @@ class Hangar(commands.Cog):
                 return
 
             # Sort ships by name
-            sorted_ships = sorted(hangar_data.items())
+            sorted_ships = sorted(hangar_data['counts'].items())
             
             # Build the response message
             response = f"The following ships are in {target_name}'s hangar:\n"
@@ -85,7 +86,15 @@ class Hangar(commands.Cog):
             total_ships = sum(count for _, count in sorted_ships)
             response += f"\nTotal ships: {total_ships}"
 
-            await interaction.followup.send(response)
+            # Send message and set up deletion after 3 minutes
+            message = await interaction.followup.send(response)
+            await asyncio.sleep(180)  # Wait 3 minutes
+            try:
+                await message.delete()
+            except discord.NotFound:
+                pass  # Message was already deleted
+            except Exception as e:
+                logger.error(f"Error deleting message: {e}")
 
         except Exception as e:
             embed = discord.Embed(
