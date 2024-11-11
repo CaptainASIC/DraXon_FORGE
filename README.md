@@ -14,7 +14,7 @@ A Discord bot for collecting and displaying system specifications.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/DraXon_FORGE.git
+git clone https://github.com/CaptainASIC/DraXon_FORGE.git
 cd DraXon_FORGE
 ```
 
@@ -73,16 +73,32 @@ CREATE DATABASE your_db_name OWNER your_db_user;
    - macOS: `brew install redis`
    - Windows: Download from [Redis website](https://redis.io/download)
 
-2. Start Redis service:
-   - Linux: `sudo systemctl start redis`
-   - macOS: `brew services start redis`
-   - Windows: Start Redis server from installation
+2. Configure Redis authentication:
+   ```bash
+   # Open redis.conf
+   sudo nano /etc/redis/redis.conf
+   ```
+   Add or modify these lines:
+   ```
+   requirepass your_redis_password
+   ```
+   For ACL-based auth (optional):
+   ```
+   user default on >your_redis_password ~* &* +@all
+   ```
 
-3. Test Redis connection:
-```bash
-redis-cli ping
-```
-Should return "PONG"
+3. Start Redis service:
+   - Linux: `sudo systemctl restart redis`
+   - macOS: `brew services restart redis`
+   - Windows: Restart Redis server from installation
+
+4. Test Redis connection:
+   ```bash
+   redis-cli
+   auth your_redis_password
+   ping
+   ```
+   Should return "PONG"
 
 ### Environment Configuration
 
@@ -104,6 +120,8 @@ DB_PORT=5432
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_DB=0
+REDIS_USER=default  # Optional: Remove if not using ACL
+REDIS_PASSWORD=your_redis_password
 ```
 
 4. Initialize the database:

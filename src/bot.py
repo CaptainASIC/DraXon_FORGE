@@ -42,8 +42,16 @@ class DraXonFORGE(commands.Bot):
                      f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/" \
                      f"{os.getenv('DB_NAME')}"
             
-            # Build Redis URL
-            redis_url = f"redis://{os.getenv('REDIS_HOST', 'localhost')}:" \
+            # Build Redis URL with authentication if provided
+            redis_user = os.getenv('REDIS_USER')
+            redis_password = os.getenv('REDIS_PASSWORD')
+            auth_string = ''
+            if redis_user and redis_password:
+                auth_string = f"{redis_user}:{redis_password}@"
+            elif redis_password:
+                auth_string = f":{redis_password}@"
+                
+            redis_url = f"redis://{auth_string}{os.getenv('REDIS_HOST', 'localhost')}:" \
                        f"{os.getenv('REDIS_PORT', '6379')}/" \
                        f"{os.getenv('REDIS_DB', '0')}"
             
