@@ -20,13 +20,15 @@ class DraXonFORGE(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.members = True
+        intents.presences = True  # Added presence intent
         
         super().__init__(
             command_prefix=commands.when_mentioned_or('!'),
             intents=intents,
             help_command=None,
             description=BOT_DESCRIPTION,
-            application_id=os.getenv('APPLICATION_ID')
+            application_id=os.getenv('APPLICATION_ID'),
+            status=discord.Status.online  # Set status in init
         )
         
         self.db_pool = None
@@ -99,7 +101,7 @@ class DraXonFORGE(commands.Bot):
         
         # Set custom activity
         activity = discord.CustomActivity(name=BOT_DESCRIPTION)
-        await self.change_presence(activity=activity, status=discord.Status.online)
+        await self.change_presence(activity=activity)
 
 def main():
     """Main function to run the bot"""
