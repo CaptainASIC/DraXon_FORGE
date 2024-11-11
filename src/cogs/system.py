@@ -168,9 +168,15 @@ class ForgeCog(commands.GroupCog, name="forge"):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
+        # Parse the timestamp string if it's from cache
+        if isinstance(info['updated_at'], str):
+            updated_at = datetime.fromisoformat(info['updated_at'])
+        else:
+            updated_at = info['updated_at']
+
         embed = discord.Embed(
             title=f"{ICON_SYSTEM} {target_name} System Specifications",
-            description=f"Last Updated: {info['updated_at'].strftime('%Y-%m-%d %H:%M:%S')}",
+            description=f"Last Updated: {updated_at.strftime('%Y-%m-%d %H:%M:%S')}",
             color=COLOR_INFO
         )
 

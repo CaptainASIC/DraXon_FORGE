@@ -10,23 +10,13 @@ class Hangar(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="forge-upload", description=CMD_UPLOAD_DESC)
-    async def forge_upload(self, interaction: discord.Interaction):
+    @app_commands.describe(file="Your shiplist.json file from XPLOR addon")
+    async def forge_upload(self, interaction: discord.Interaction, file: discord.Attachment):
         """Upload hangar data from XPLOR addon JSON export"""
-        await interaction.response.send_message(
-            "Please upload your shiplist.json file from XPLOR addon",
-            ephemeral=True
-        )
-
-        def check(message):
-            return (message.author.id == interaction.user.id and 
-                   message.channel.id == interaction.channel_id and 
-                   message.attachments)
+        await interaction.response.defer(ephemeral=True)
 
         try:
-            # Wait for file upload
-            message = await self.bot.wait_for('message', timeout=60.0, check=check)
-            
-            if not message.attachments[0].filename.endswith('.json'):
+            if not file.filename.endswith('.json'):
                 await interaction.followup.send(
                     "Please upload a JSON file.",
                     ephemeral=True
@@ -34,7 +24,7 @@ class Hangar(commands.Cog):
                 return
 
             # Read the JSON file
-            json_content = await message.attachments[0].read()
+            json_content = await file.read()
             json_str = json_content.decode('utf-8')
 
             # Save the hangar data
@@ -54,18 +44,7 @@ class Hangar(commands.Cog):
                 )
             
             await interaction.followup.send(embed=embed, ephemeral=True)
-            
-            # Delete the file upload message for cleanliness
-            try:
-                await message.delete()
-            except:
-                pass
 
-        except TimeoutError:
-            await interaction.followup.send(
-                "Upload timed out. Please try again.",
-                ephemeral=True
-            )
         except Exception as e:
             embed = discord.Embed(
                 title=f"{ICON_ERROR} Error",
