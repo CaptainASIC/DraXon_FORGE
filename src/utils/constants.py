@@ -2,6 +2,9 @@
 Constants used throughout the DraXon FORGE bot
 """
 
+# Bot Configuration
+BOT_DESCRIPTION = "Fleet Operations & Resource Guidance Engine"
+
 # Embed Colors (in decimal format)
 COLOR_SUCCESS = 0x2ECC71  # Green
 COLOR_ERROR = 0xE74C3C    # Red

@@ -19,11 +19,13 @@ class DraXonFORGE(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
+        intents.members = True
         
         super().__init__(
             command_prefix=commands.when_mentioned_or('!'),
             intents=intents,
             help_command=None,
+            description=BOT_DESCRIPTION,
             application_id=os.getenv('APPLICATION_ID')
         )
         
@@ -93,10 +95,11 @@ class DraXonFORGE(commands.Bot):
         # Print guilds the bot is in
         guilds = [guild.name for guild in self.guilds]
         logger.info(f"Bot is in {len(guilds)} guild(s): {', '.join(guilds)}")
+        logger.info(f"Serving {sum(g.member_count for g in self.guilds)} users")
         
         # Set custom activity
-        activity = discord.CustomActivity(name="Fleet Operations & Resource Guidance Engine")
-        await self.change_presence(activity=activity)
+        activity = discord.CustomActivity(name=BOT_DESCRIPTION)
+        await self.change_presence(activity=activity, status=discord.Status.online)
 
 def main():
     """Main function to run the bot"""
