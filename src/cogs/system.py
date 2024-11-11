@@ -132,6 +132,13 @@ class ForgeCog(commands.GroupCog, name="forge"):
     def __init__(self, bot):
         super().__init__()
         self.bot = bot
+        
+        # Add context menu command
+        self.context_menu = app_commands.ContextMenu(
+            name='View System Info',
+            callback=self.view_system_context_menu,
+        )
+        self.bot.tree.add_command(self.context_menu)
 
     async def save_system_info(self, user_id, os, cpu, gpu, memory, storage):
         """Save core system information to database"""
@@ -140,6 +147,56 @@ class ForgeCog(commands.GroupCog, name="forge"):
     async def update_peripherals(self, user_id, keyboard, mouse, other_controllers):
         """Update peripherals information in database"""
         await self.bot.db.update_peripherals(user_id, keyboard, mouse, other_controllers)
+
+    async def view_system_context_menu(self, interaction: discord.Interaction, member: discord.Member):
+        """Context menu command for viewing system info"""
+        await interaction.response.defer(ephemeral=True)
+        
+        info = await self.bot.db.get_system_info(member.id)
+        
+        if not info:
+            embed = discord.Embed(
+                title=f"{ICON_ERROR} No System Information Available",
+                description=MSG_NO_MEMBER_INFO,
+                color=COLOR_ERROR
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Parse the timestamp string if it's from cache
+        if isinstance(info['updated_at'], str):
+            updated_at = datetime.fromisoformat(info['updated_at'])
+        else:
+            updated_at = info['updated_at']
+
+        embed = discord.Embed(
+            title=f"{ICON_SYSTEM} {member.display_name}'s System Specifications",
+            description=f"Last Updated: {updated_at.strftime('%Y-%m-%d %H:%M:%S')}",
+            color=COLOR_INFO
+        )
+
+        # Set the author to the target user
+        embed.set_author(
+            name=member.display_name,
+            icon_url=member.display_avatar.url
+        )
+
+        # Core system specs
+        embed.add_field(name="Operating System", value=info['os'], inline=True)
+        embed.add_field(name="CPU", value=info['cpu'], inline=True)
+        embed.add_field(name="GPU", value=info['gpu'], inline=True)
+        embed.add_field(name="Memory", value=info['memory'], inline=True)
+        embed.add_field(name="Storage", value=info['storage'], inline=True)
+        
+        # Input devices (only show if they exist and have values)
+        if 'keyboard' in info and info['keyboard']:
+            embed.add_field(name="Keyboard", value=info['keyboard'], inline=True)
+        if 'mouse' in info and info['mouse']:
+            embed.add_field(name="Mouse", value=info['mouse'], inline=True)
+        if 'other_controllers' in info and info['other_controllers']:
+            embed.add_field(name="Other Controllers", value=info['other_controllers'], inline=False)
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="collect", description=CMD_COLLECT_DESC)
     async def collect(self, interaction: discord.Interaction):
