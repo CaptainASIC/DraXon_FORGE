@@ -35,6 +35,20 @@ async def init_db(database_url: str) -> asyncpg.Pool:
                 )
             ''')
 
+            # Add audio_config column if it doesn't exist
+            await conn.execute('''
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name = 'system_info' 
+                        AND column_name = 'audio_config'
+                    ) THEN
+                        ALTER TABLE system_info ADD COLUMN audio_config TEXT;
+                    END IF;
+                END $$;
+            ''')
+
             # Create hangar table with detailed ship information
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS hangar_ships (
