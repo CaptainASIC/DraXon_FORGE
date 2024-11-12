@@ -123,7 +123,9 @@ class Database:
                 data_dict = dict(data)
                 # Convert datetime to string for Redis
                 data_dict['updated_at'] = data_dict['updated_at'].isoformat()
-                await self.cache.hmset(cache_key, data_dict)
+                # Convert None values to empty strings for Redis
+                cache_dict = {k: '' if v is None else str(v) for k, v in data_dict.items()}
+                await self.cache.hmset(cache_key, cache_dict)
                 await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
                 return data_dict
                 
