@@ -91,6 +91,8 @@ class PeripheralsModal(discord.ui.Modal, title="Input Devices"):
                 self.mouse.default = existing_info['mouse']
             if existing_info.get('other_controllers'):
                 self.other_controllers.default = existing_info['other_controllers']
+            if existing_info.get('audio_config'):
+                self.audio_config.default = existing_info['audio_config']
 
     keyboard = discord.ui.TextInput(
         label="Keyboard",
@@ -111,12 +113,20 @@ class PeripheralsModal(discord.ui.Modal, title="Input Devices"):
         style=discord.TextStyle.paragraph
     )
 
+    audio_config = discord.ui.TextInput(
+        label="Audio Configuration",
+        placeholder="e.g., Speakers, Mic, Headset",
+        required=False,
+        style=discord.TextStyle.paragraph
+    )
+
     async def on_submit(self, interaction: discord.Interaction):
         await self.cog.update_peripherals(
             interaction.user.id,
             str(self.keyboard),
             str(self.mouse),
-            str(self.other_controllers)
+            str(self.other_controllers),
+            str(self.audio_config)
         )
         
         embed = discord.Embed(
@@ -144,9 +154,9 @@ class ForgeCog(commands.GroupCog, name="forge"):
         """Save core system information to database"""
         await self.bot.db.save_system_info(user_id, os, cpu, gpu, memory, storage)
 
-    async def update_peripherals(self, user_id, keyboard, mouse, other_controllers):
+    async def update_peripherals(self, user_id, keyboard, mouse, other_controllers, audio_config):
         """Update peripherals information in database"""
-        await self.bot.db.update_peripherals(user_id, keyboard, mouse, other_controllers)
+        await self.bot.db.update_peripherals(user_id, keyboard, mouse, other_controllers, audio_config)
 
     async def view_system_context_menu(self, interaction: discord.Interaction, member: discord.Member):
         """Context menu command for viewing system info"""
@@ -195,6 +205,8 @@ class ForgeCog(commands.GroupCog, name="forge"):
             embed.add_field(name="Mouse", value=info['mouse'], inline=True)
         if 'other_controllers' in info and info['other_controllers']:
             embed.add_field(name="Other Controllers", value=info['other_controllers'], inline=False)
+        if 'audio_config' in info and info['audio_config']:
+            embed.add_field(name="Audio Configuration", value=info['audio_config'], inline=False)
 
         await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -257,6 +269,8 @@ class ForgeCog(commands.GroupCog, name="forge"):
             embed.add_field(name="Mouse", value=info['mouse'], inline=True)
         if 'other_controllers' in info and info['other_controllers']:
             embed.add_field(name="Other Controllers", value=info['other_controllers'], inline=False)
+        if 'audio_config' in info and info['audio_config']:
+            embed.add_field(name="Audio Configuration", value=info['audio_config'], inline=False)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 

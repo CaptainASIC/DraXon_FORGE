@@ -1,7 +1,7 @@
 # utils/constants.py
 
 # Version info
-APP_VERSION = "2.3.0"
+APP_VERSION = "2.3.1"
 BUILD_DATE = "Nov 2024"
 
 # Bot configuration
@@ -44,7 +44,7 @@ MSG_NO_MEMBER_HANGAR = "This member hasn't uploaded their hangar data yet."
 MSG_NO_FLEET_DATA = "No fleet data available. Members need to upload their hangar data first."
 
 MSG_ABOUT = """```md
-# DraXon FORGE v2.3.0
+# DraXon FORGE v2.3.1
 
 A comprehensive fleet and system management bot.
 

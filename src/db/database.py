@@ -30,6 +30,7 @@ async def init_db(database_url: str) -> asyncpg.Pool:
                     keyboard TEXT,
                     mouse TEXT,
                     other_controllers TEXT,
+                    audio_config TEXT,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -130,15 +131,15 @@ class Database:
         cache_key = f"system_info:{user_id}"
         await self.cache.delete(cache_key)
 
-    async def update_peripherals(self, user_id: int, keyboard: str = None, mouse: str = None, other_controllers: str = None):
+    async def update_peripherals(self, user_id: int, keyboard: str = None, mouse: str = None, other_controllers: str = None, audio_config: str = None):
         """Update peripherals information in database and cache"""
         async with self.pool.acquire() as conn:
             await conn.execute('''
                 UPDATE system_info 
-                SET keyboard = $2, mouse = $3, other_controllers = $4,
+                SET keyboard = $2, mouse = $3, other_controllers = $4, audio_config = $5,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = $1
-            ''', user_id, keyboard, mouse, other_controllers)
+            ''', user_id, keyboard, mouse, other_controllers, audio_config)
             
         # Invalidate cache
         cache_key = f"system_info:{user_id}"
