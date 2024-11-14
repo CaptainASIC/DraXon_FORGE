@@ -15,9 +15,6 @@ async def init_db(database_url: str) -> asyncpg.Pool:
         
         # Initialize database tables
         async with pool.acquire() as conn:
-            # Drop existing hangar_ships table to apply new schema
-            await conn.execute('DROP TABLE IF EXISTS hangar_ships')
-            
             # Create system_info table
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS system_info (
@@ -49,7 +46,7 @@ async def init_db(database_url: str) -> asyncpg.Pool:
                 END $$;
             ''')
 
-            # Create hangar table with detailed ship information
+            # Create hangar table with detailed ship information if it doesn't exist
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS hangar_ships (
                     user_id BIGINT NOT NULL,
