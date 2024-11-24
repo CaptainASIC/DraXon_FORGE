@@ -199,6 +199,7 @@ class Database:
             await self.cache.delete(cache_key)
             await self.cache.delete("fleet_total")
             await self.cache.delete("fleet_ships")
+            await self.cache.delete("ship_counts")  # New cache key for ship counts
             
             # Verify the data was saved
             async with self.pool.acquire() as conn:
@@ -305,6 +306,41 @@ class Database:
         except Exception as e:
             logger.error(f"Error getting fleet total: {e}")
             return {}
+
+    async def get_ship_counts(self) -> List[Dict]:
+        """Get ship counts per user"""
+        cache_key = "ship_counts"
+        
+        try:
+            # Try cache first
+            cached_data = await self.cache.get(cache_key)
+            if cached_data:
+                return json.loads(cached_data)
+
+            # If not in cache, calculate from database
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch('''
+                    SELECT 
+                        user_id,
+                        COUNT(*) as ship_count
+                    FROM hangar_ships
+                    GROUP BY user_id
+                    ORDER BY COUNT(*) DESC
+                ''')
+                
+                if not rows:
+                    return []
+
+                counts = [dict(row) for row in rows]
+                
+                # Cache the result
+                await self.cache.set(cache_key, json.dumps(counts))
+                await self.cache.expire(cache_key, 3600)  # Cache for 1 hour
+                
+                return counts
+        except Exception as e:
+            logger.error(f"Error getting ship counts: {e}")
+            return []
 
     async def get_ship_owners(self, ship_name: str) -> List[Dict]:
         """Get detailed information about owners of a specific ship"""

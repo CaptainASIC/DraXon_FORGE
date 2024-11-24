@@ -401,6 +401,53 @@ class Hangar(commands.Cog):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @app_commands.command(name="forge-shipcount", description=CMD_SHIPCOUNT_DESC)
+    async def forge_shipcount(self, interaction: discord.Interaction):
+        """Display total ship counts per member"""
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            ship_counts = await self.bot.db.get_ship_counts()
+            
+            if not ship_counts:
+                await interaction.followup.send(MSG_NO_FLEET_DATA, ephemeral=True)
+                return
+
+            # Build the response message
+            response = [
+                "```md",
+                "# DraXon Industries Fleet Size by Member",
+                "",
+                "| Member | Ships |",
+                "|--------|-------|"
+            ]
+            
+            total_ships = 0
+            for data in ship_counts:
+                member = interaction.guild.get_member(data['user_id'])
+                if member:
+                    ship_count = data['ship_count']
+                    total_ships += ship_count
+                    response.append(f"| {member.display_name:<30} | {ship_count:>5} |")
+            
+            response.extend([
+                "",
+                "# Summary",
+                f"DraXon Industries Total Fleet Size: {total_ships} ships",
+                "```"
+            ])
+
+            await interaction.followup.send("\n".join(response), ephemeral=True)
+
+        except Exception as e:
+            logger.error(f"Error in forge-shipcount: {str(e)}")
+            embed = discord.Embed(
+                title=f"{ICON_ERROR} Error",
+                description=f"An error occurred: {str(e)}",
+                color=COLOR_ERROR
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
     async def view_hangar_context_menu(self, interaction: discord.Interaction, member: discord.Member):
         """Context menu command for viewing hangar"""
         await interaction.response.defer(ephemeral=True)

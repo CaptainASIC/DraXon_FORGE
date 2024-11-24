@@ -29,6 +29,7 @@ CMD_UPLOAD_DESC = "Upload your hangar data from XPLOR addon JSON export"
 CMD_HANGAR_DESC = "Display your hangar contents (auto-deletes after 3 minutes)"
 CMD_FLEET_DESC = "Display total fleet counts across all members"
 CMD_LOCATE_DESC = "Find members who own a specific ship model"
+CMD_SHIPCOUNT_DESC = "Display total ship counts per member (sorted by fleet size)"
 
 # Messages
 MSG_NO_INFO = "Please use `/forge-collect` first to gather system information."
