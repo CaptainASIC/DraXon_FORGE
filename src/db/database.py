@@ -285,14 +285,15 @@ class Database:
                 
                 fleet_data = {}
                 for row in rows:
-                    key = f"{row['manufacturer_name']} {row['name']}"
-                    fleet_data[key] = {
+                    # Use just the name as the key, and include manufacturer in the data
+                    fleet_data[row['name']] = {
+                        'manufacturer_name': row['manufacturer_name'],
                         'count': row['count'],
                         'lti_count': row['lti_count'],
                         'warbond_count': row['warbond_count'],
                         'custom_names': row['custom_names'] if row['custom_names'] != row['name'] else None
                     }
-                    logger.info(f"Added fleet data for {key}: {fleet_data[key]}")
+                    logger.info(f"Added fleet data for {row['name']}: {fleet_data[row['name']]}")
 
                 if not fleet_data:
                     logger.error("No fleet data generated from query results")

@@ -247,10 +247,8 @@ class Hangar(commands.Cog):
             # Group by manufacturer
             manu_groups = defaultdict(list)
             for ship_name, data in fleet_data.items():
-                parts = ship_name.split(' ', 1)
-                if len(parts) == 2:
-                    manufacturer, model = parts
-                    manu_groups[manufacturer].append((model, data))
+                manufacturer = data['manufacturer_name']
+                manu_groups[manufacturer].append((ship_name, data))
             
             # Build the response message
             response = [
@@ -264,7 +262,7 @@ class Hangar(commands.Cog):
                 response.append(f"## {manufacturer}")
                 
                 # Sort ships within manufacturer
-                for model, data in sorted(manu_groups[manufacturer]):
+                for ship_name, data in sorted(manu_groups[manufacturer]):
                     count = data['count']
                     lti_count = data['lti_count']
                     wb_count = data['warbond_count']
@@ -282,7 +280,7 @@ class Hangar(commands.Cog):
                     # Format custom names
                     custom_str = f' ("{data["custom_names"]}")' if data.get('custom_names') else ""
                     
-                    response.append(f"* {count:2d} × {model}{status_str}{custom_str}")
+                    response.append(f"* {count:2d} × {ship_name}{status_str}{custom_str}")
                 
                 response.append("")  # Add spacing between manufacturers
             
