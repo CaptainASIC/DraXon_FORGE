@@ -415,23 +415,22 @@ class Hangar(commands.Cog):
             response = [
                 "```md",
                 "# DraXon Industries Fleet Size by Member",
-                "",
-                "| Member | Ships |",
-                "|--------|-------|"
+                ""
             ]
             
+            # Sort members by ship count (descending)
             total_ships = 0
-            for data in ship_counts:
+            for data in sorted(ship_counts, key=lambda x: x['ship_count'], reverse=True):
                 member = interaction.guild.get_member(data['user_id'])
                 if member:
                     ship_count = data['ship_count']
                     total_ships += ship_count
-                    response.append(f"| {member.display_name:<30} | {ship_count:>5} |")
+                    response.append(f"* {ship_count:2d} × {member.display_name}")
             
             response.extend([
                 "",
                 "# Summary",
-                f"DraXon Industries Total Fleet Size: {total_ships} ships",
+                f"* Total Fleet Size: {total_ships} ships",
                 "```"
             ])
 

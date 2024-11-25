@@ -1,7 +1,7 @@
 # utils/constants.py
 
 # Version info
-APP_VERSION = "2.4.1"
+APP_VERSION = "2.4.2"
 BUILD_DATE = "Nov 2024"
 
 # Bot configuration
