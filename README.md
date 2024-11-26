@@ -100,8 +100,10 @@ DraXon_FORGE/
 - `/forge-hangar [member]` - Display hangar contents (auto-deletes after 3 minutes)
 
 ### Fleet Management
-- `/forge-fleet` - Display total fleet counts across all members
+- `/forge-fleet` - Display total fleet counts across all members, organized by manufacturer
+- `/forge-shipcount` - Check ship counts per member
 - `/forge-locate` - Find members who own a specific ship model
+- `/forge-debug` - (Admin only) Check database state and ship statistics
 
 ### Context Menu Commands
 - Right-click any member > Apps > View System Info
@@ -114,11 +116,15 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 ### System Information Table
 - User system specifications
 - Input device information
+- Audio configuration
 - User data
 
 ### Hangar Ships Table
 - User ID
-- Ship inventory with manufacturer details (stored as JSONB)
+- Ship code and name
+- Manufacturer details
+- LTI and Warbond status
+- Pledge information
 - Last update timestamp
 
 ## Using the Hangar System
@@ -128,7 +134,8 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 3. Use `/forge-upload` and upload the exported shiplist.json file
 4. View your hangar with `/forge-hangar`
 5. Explore the organization's fleet:
-   - Use `/forge-fleet` to see total ship counts
+   - Use `/forge-fleet` to see total ship counts by manufacturer
+   - Use `/forge-shipcount` to see ship counts per member
    - Use `/forge-locate` to find specific ship owners
 
 ## Contributing
@@ -141,7 +148,25 @@ The bot uses PostgreSQL for persistent storage and Redis for caching:
 
 ## Version History
 
-### v2.2.0 (Current)
+### v2.4.2 (Current)
+- Improved manufacturer display in fleet summaries
+- Consistent formatting across all fleet-related commands
+- Better organization of ship listings by manufacturer
+- Enhanced fleet statistics display
+
+### v2.4.1
+- Added ship count command for member statistics
+- Improved error handling and logging
+- Enhanced cache management
+- Added audio configuration support
+
+### v2.3.0
+- Added detailed manufacturer information
+- Enhanced fleet summary formatting
+- Improved database query performance
+- Added debug command for administrators
+
+### v2.2.0
 - Added organization-wide fleet management
 - New `/forge-fleet` command for total ship counts
 - New `/forge-locate` command with ship model selector
